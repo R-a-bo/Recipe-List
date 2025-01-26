@@ -40,11 +40,6 @@
 			path = BirchFetchTakeHomeTests;
 			sourceTree = "<group>";
 		};
-		12A2918C2D46C33F00C34637 /* BirchFetchTakeHomeUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = BirchFetchTakeHomeUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,7 +72,6 @@
 			children = (
 				12A291712D46C33C00C34637 /* BirchFetchTakeHome */,
 				12A291822D46C33F00C34637 /* BirchFetchTakeHomeTests */,
-				12A2918C2D46C33F00C34637 /* BirchFetchTakeHomeUITests */,
 				12A291702D46C33C00C34637 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -152,9 +146,6 @@
 			);
 			dependencies = (
 				12A2918B2D46C33F00C34637 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				12A2918C2D46C33F00C34637 /* BirchFetchTakeHomeUITests */,
 			);
 			name = BirchFetchTakeHomeUITests;
 			packageProductDependencies = (
