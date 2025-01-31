@@ -11,7 +11,7 @@ import SwiftUI
 struct BirchFetchTakeHomeApp: App {
     var body: some Scene {
         WindowGroup {
-            RecipeListView()
+            RecipeListView(viewModel: RecipeListViewModel(imageCache: ImageCache(), network: Network()))
         }
     }
 }

@@ -8,11 +8,30 @@
 import SwiftUI
 
 struct RecipeListView: View {
-    var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+    
+    @StateObject var viewModel: RecipeListViewModel
+    
+    private var showError: Binding<Bool> {
+        Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )
     }
-}
-
-#Preview {
-    RecipeListView()
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(viewModel.recipes, id: \.uuid) { recipe in
+                    RecipeCellView(viewModel: RecipeCellViewModel(recipe: recipe, imageCache: viewModel.imageCache, network: viewModel.network, delegate: viewModel))
+                }
+            }
+            .alert("Error", isPresented: showError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
+            .navigationTitle("Recipes")
+        }
+//        .navigationdest
+    }
 }

@@ -10,7 +10,7 @@ import SwiftUI
 protocol Networking {
     
     func getRecipeList(recipesUrl: URL) async throws -> [Recipe]
-    func getImage(imageUrl: URL) async throws -> Image
+    func getImage(imageUrl: URL) async throws -> Data
 }
 
 class Network: Networking {
@@ -22,8 +22,10 @@ class Network: Networking {
                 throw URLError(.badServerResponse)
         }
         
-        let recipeDtos = try JSONDecoder().decode([RecipeDTO].self, from: data)
-        return try recipeDtos.map {
+        let jsonDecoder = JSONDecoder()
+        jsonDecoder.keyDecodingStrategy = .convertFromSnakeCase
+        let recipesDto = try jsonDecoder.decode(RecipeListDTO.self, from: data)
+        return try recipesDto.recipes.map {
             guard let recipe = Recipe(dto: $0) else {
                 throw RecipeListError.invalidData
             }
@@ -31,12 +33,8 @@ class Network: Networking {
         }
     }
     
-    func getImage(imageUrl: URL) async throws -> Image {
+    func getImage(imageUrl: URL) async throws -> Data {
         let (data, _) = try await URLSession.shared.data(from: imageUrl)
-        if let uiImage = UIImage(data: data) {
-            return Image(uiImage: uiImage)
-        } else {
-            throw RecipeListError.invalidData
-        }
+        return data
     }
 }

@@ -6,18 +6,33 @@
 //
 
 import Foundation
+import OSLog
 import SwiftUI
 
-class ImageCache {
-    
-    enum ImageSize {
-        case small
-        case large
-    }
+enum ImageSize {
+    case small
+    case large
+}
+
+protocol ImageCaching {
+    func getImage(uuid: UUID, imageSize: ImageSize) async -> Image?
+    func saveImage(uuid: UUID, imageSize: ImageSize, imageData: Data) async
+}
+
+// Rudimentary memory + disk cache. Thread safe. Does not invalidate and refresh data
+actor ImageCache: ImageCaching {
     
     private class Key: Hashable {
         let uuid: UUID
         let imageSize: ImageSize
+        
+        var description: String {
+            "uuid \(uuid.uuidString), size \(imageSize == .small ? "small" : "large")"
+        }
+        
+        var fileName: String {
+            "\(uuid.uuidString)_\(imageSize == .small ? "small" : "large")"
+        }
         
         init(uuid: UUID, imageSize: ImageSize) {
             self.uuid = uuid
@@ -36,43 +51,53 @@ class ImageCache {
         }
     }
     
-    private class Entry {
-        let image: Image
-        let lastFetched: Date
-        
-        init(image: Image, lastFetched: Date) {
-            self.image = image
-            self.lastFetched = lastFetched
+    // Use NSCache for better app memory management
+    private let cache = NSCache<Key, UIImage>()
+    
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ImageCache")
+    
+    func getImage(uuid: UUID, imageSize: ImageSize) -> Image? {
+        let key = Key(uuid: uuid, imageSize: imageSize)
+        // return memory cached image if it is available and fetched
+        if let memoryCachedImage = cache.object(forKey: key) {
+            logger.info("Image for recipe \(key.description) found cached in memory")
+            return Image(uiImage: memoryCachedImage)
+        } else if let diskCachedImage = getFromDisk(key: key) {
+            // propogate to memory for easier access going forward
+            logger.info("Image for recipe \(key.description) found cached on disk")
+            cache.setObject(diskCachedImage, forKey: key)
+            return Image(uiImage: diskCachedImage)
+        } else {
+            logger.info("Image for recipe \(key.description) not found in cache")
+            return nil
         }
     }
     
-    private let network: Networking
-    
-    // Use NSCache for better app memory management
-    private let cache = NSCache<Key, Entry>()
-    
-    // Keep track of Tasks to avoid creating duplicate tasks
-    private var tasks = [Key: Task<Image, Error>]()
-    
-    init(network: Networking) {
-        self.network = network
+    func saveImage(uuid: UUID, imageSize: ImageSize, imageData: Data) {
+        let key = Key(uuid: uuid, imageSize: imageSize)
+        guard let uiImage = UIImage(data: imageData) else {
+            logger.error("Unable to cache image for recipe \(key.description), cannot convert to UIImage")
+            return
+        }
+        cache.setObject(uiImage, forKey: key)
+        saveToDisk(key: key, imageData: imageData)
     }
     
-    // In a simple app like this, we can always call this function from the main thread,
-    //      thus avoiding concurrency issues such a data races that could occur if the cache
-    //      or tasks dict were accessed from different thread simultaneously
-    func getImage(uuid: UUID, url: URL, imageSize: ImageSize) -> Task<Image, Error> {
-        let key = Key(uuid: uuid, imageSize: imageSize)
-        // Acept cached entry only if it was made less than 24 hours ago
-        if let entry = cache.object(forKey: key),
-           entry.lastFetched.addingTimeInterval(24 * 60 * 60) > Date.now {
-            return Task { return entry.image }
-        } else if let task = tasks[key] {
-            return task
-        } else {
-            return Task {
-                return try await network.getImage(imageUrl: url)
-            }
+    private func getFromDisk(key: Key) -> UIImage? {
+        let url = URL.documentsDirectory.appending(path: key.fileName)
+        if let imageData = try? Data(contentsOf: url),
+           let uiImage = UIImage(data: imageData) {
+            return uiImage
+        }
+        return nil
+    }
+    
+    private func saveToDisk(key: Key, imageData: Data) {
+        let url = URL.documentsDirectory.appending(path: key.fileName)
+        do {
+            try imageData.write(to: url)
+        } catch {
+            logger.error("Unable to save image for recipe \(key.description) to disk. Error: \(error.localizedDescription)")
         }
     }
 }

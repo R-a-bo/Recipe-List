@@ -9,6 +9,28 @@ import Foundation
 
 extension Locale.Region {
     
+    private static let adjectivalToCountryCode: [String: String] = [
+            "American": "US",
+            "British": "GB",
+            "French": "FR",
+            "Canadian": "CA",
+            "Italian": "IT",
+            "Malaysian": "MY",
+            "Tunisian": "TN",
+            "Greece": "GR",
+            "Polish": "PL",
+            "Portuguese": "PT",
+            "Russian": "RU",
+            "Croatian": "HR",
+    ]
+    
+    init?(adjectival: String) {
+        guard let countryCode = Self.adjectivalToCountryCode[adjectival] else {
+            return nil
+        }
+        self.init(countryCode)
+    }
+    
     var flagEmoji: String? {
         guard self.identifier.count == 2 else { return nil }
         let lowercasedCode = self.identifier.lowercased()
