@@ -13,6 +13,7 @@ struct Recipe {
     let name: String
     let photoUrlLarge: URL
     let photoUrlSmall: URL
+    let sourceUrl: URL?
     let uuid: UUID
     let youtubeUrl: URL?
     
@@ -20,6 +21,12 @@ struct Recipe {
         let cuisine = Locale.Region(adjectival: dto.cuisine)
         guard let photoUrlLarge = URL(string: dto.photoUrlLarge) else { return nil }
         guard let photoUrlSmall = URL(string: dto.photoUrlSmall) else { return nil }
+        if let sourceUrlString = dto.sourceUrl,
+           let sourceUrl = URL(string: sourceUrlString) {
+            self.sourceUrl = sourceUrl
+        } else {
+            self.sourceUrl = nil
+        }
         guard let uuid = UUID(uuidString: dto.uuid) else { return nil }
         if let youtubeUrlString = dto.youtubeUrl,
            let youtubeUrl = URL(string: youtubeUrlString) {

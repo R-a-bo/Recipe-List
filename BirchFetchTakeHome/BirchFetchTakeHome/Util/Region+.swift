@@ -17,7 +17,7 @@ extension Locale.Region {
             "Italian": "IT",
             "Malaysian": "MY",
             "Tunisian": "TN",
-            "Greece": "GR",
+            "Greek": "GR",
             "Polish": "PL",
             "Portuguese": "PT",
             "Russian": "RU",

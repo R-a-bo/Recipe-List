@@ -20,18 +20,25 @@ struct RecipeListView: View {
     
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(viewModel.recipes, id: \.uuid) { recipe in
-                    RecipeCellView(viewModel: RecipeCellViewModel(recipe: recipe, imageCache: viewModel.imageCache, network: viewModel.network, delegate: viewModel))
+            if !viewModel.recipes.isEmpty {
+                List {
+                    ForEach(viewModel.recipes, id: \.uuid) { recipe in
+                        NavigationLink(destination: RecipeDetailView(viewModel: RecipeDetailViewModel(recipe: recipe,
+                                                                                                      imageCache: viewModel.imageCache,
+                                                                                                      network: viewModel.network))) {
+                            RecipeCellView(viewModel: RecipeCellViewModel(recipe: recipe, imageCache: viewModel.imageCache, network: viewModel.network, delegate: viewModel))
+                        }
+                    }
                 }
+                .navigationTitle("Recipes")
+            } else {
+                Text("No recipes found")
             }
-            .alert("Error", isPresented: showError) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(viewModel.errorMessage ?? "")
-            }
-            .navigationTitle("Recipes")
         }
-//        .navigationdest
+        .alert("Error", isPresented: showError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
 }
